@@ -1,56 +1,43 @@
 import { useEffect, useRef } from 'react';
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 
 interface MapComponentProps {
-  apiKey: string;
   center?: { lat: number; lng: number };
   zoom?: number;
 }
 
-const MapComponent = ({ 
-  apiKey, 
-  center = { lat: 40.7128, lng: -74.0060 }, // Default to New York City
-  zoom = 12 
+const MapComponent = ({
+  center = { lat: 40.7128, lng: -74.0060 },
+  zoom = 12,
 }: MapComponentProps) => {
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const initMap = async () => {
-      // Set the loader options
-      setOptions({
-        key: apiKey,
-        v: 'weekly',
-      });
+    if (!mapRef.current) return;
 
-      try {
-        // Import the Maps library
-        const { Map } = await importLibrary('maps');
-        
-        if (mapRef.current) {
-          new Map(mapRef.current, {
-            center: center,
-            zoom: zoom,
-          });
-        }
-      } catch (error) {
-        console.error('Error loading Google Maps:', error);
-      }
+    const map = L.map(mapRef.current).setView([center.lat, center.lng], zoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map);
+
+    return () => {
+      map.remove();
     };
-
-    if (apiKey) {
-      initMap();
-    }
-  }, [apiKey, center, zoom]);
+  }, [center, zoom]);
 
   return (
-    <div 
-      ref={mapRef} 
-      style={{ 
-        width: '100%', 
+    <div
+      ref={mapRef}
+      style={{
+        width: '100%',
         height: '500px',
         borderRadius: '8px',
-        border: '1px solid #ddd'
-      }} 
+        border: '1px solid #ddd',
+      }}
     />
   );
 };
